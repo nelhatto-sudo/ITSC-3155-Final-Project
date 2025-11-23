@@ -38,8 +38,9 @@ class Order(Base):
         unique=True,
         default=generate_tracking_number,  # auto-assign on insert
     )
-    customer_name = Column(String(100))
-    customer_email = Column(String(120))
+    customer_name = Column(String(100), nullable=False)
+    customer_phone = Column(String(20), nullable=False)
+    delivery_address = Column(String(255), nullable=False)
     order_type = Column(Enum(OrderType), nullable=False, default=OrderType.takeout)
     status = Column(Enum(OrderStatus), nullable=False, default=OrderStatus.placed)
     order_date = Column(DATETIME, nullable=False, default=datetime.utcnow)

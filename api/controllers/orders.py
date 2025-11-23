@@ -65,6 +65,19 @@ def recalculate_order_totals(db: Session, order_id: int):
 
     db.commit()
 
+def read_by_tracking_number(db: Session, tracking_number: str):
+    order = (
+        db.query(order_model.Order)
+        .filter(order_model.Order.tracking_number == tracking_number)
+        .first()
+    )
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order with this tracking number not found.",
+        )
+    return order
+
 def create(db: Session, request):
     # --- Validate promotion if provided ---
     promo = None
@@ -93,7 +106,8 @@ def create(db: Session, request):
 
     new_item = order_model.Order(
         customer_name=request.customer_name,
-        customer_email=request.customer_email,
+        customer_phone=request.customer_phone,
+        delivery_address=request.delivery_address,
         order_type=order_model.OrderType(request.order_type),
         promo_id=promo_id,
     )
@@ -107,7 +121,6 @@ def create(db: Session, request):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
 
     return new_item
-
 
 def read(
     db: Session,

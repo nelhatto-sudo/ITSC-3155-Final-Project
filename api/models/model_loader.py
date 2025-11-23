@@ -117,7 +117,8 @@ def seed_initial_data():
         # ---------- ORDERS ----------
         order1 = Order(
             customer_name="Alice Smith",
-            customer_email="alice@example.com",
+            customer_phone="555-123-4567",
+            delivery_address="123 Main St",
             order_type=OrderType.takeout,
             status=OrderStatus.completed,
             order_date=now - timedelta(days=1),
@@ -130,7 +131,8 @@ def seed_initial_data():
         )
         order2 = Order(
             customer_name="Bob Johnson",
-            customer_email="bob@example.com",
+            customer_phone="555-987-6543",
+            delivery_address="45 Oak Ave, Apt 2B",
             order_type=OrderType.delivery,
             status=OrderStatus.preparing,
             order_date=now,

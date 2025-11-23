@@ -6,7 +6,8 @@ from .order_details import OrderDetail
 
 class OrderBase(BaseModel):
     customer_name: str
-    customer_email: Optional[str] = None
+    customer_phone: str
+    delivery_address: str
     order_type: str  # "takeout" / "delivery"
     promo_id: Optional[int] = None
 
@@ -25,7 +26,8 @@ class OrderUpdate(BaseModel):
     All fields optional.
     """
     customer_name: Optional[str] = None
-    customer_email: Optional[str] = None
+    customer_phone: Optional[str] = None
+    delivery_address: Optional[str] = None
     order_type: Optional[str] = None
     status: Optional[str] = None
     payment_status: Optional[str] = None

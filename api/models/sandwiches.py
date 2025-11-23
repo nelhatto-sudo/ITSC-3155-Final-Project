@@ -20,3 +20,8 @@ class Sandwich(Base):
         back_populates="sandwich",
         cascade="all, delete-orphan",
     )
+
+    @property
+    def tag_ids(self) -> list[int]:
+        # sandwich.sandwich_tags is a list of SandwichTag objects
+        return [st.tag_id for st in self.sandwich_tags]

@@ -21,6 +21,18 @@ def _set_sandwich_tags(db: Session, sandwich: model.Sandwich, tag_ids: list[int]
         link = SandwichTag(sandwich_id=sandwich.id, tag_id=tid)
         sandwich.sandwich_tags.append(link)
 
+def search_by_tag(db: Session, tag_name: str | None):
+    q = db.query(model.Sandwich)
+
+    if tag_name:
+        q = (
+            q.join(SandwichTag, SandwichTag.sandwich_id == model.Sandwich.id)
+             .join(Tag, Tag.id == SandwichTag.tag_id)
+             .filter(Tag.name == tag_name)
+        )
+
+    return q.all()
+
 def create(db: Session, request):
     data = request.dict()
     tag_ids = data.pop("tag_ids", []) or []
