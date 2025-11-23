@@ -2,12 +2,40 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, Response, Depends
 from ..models import orders as model
 from sqlalchemy.exc import SQLAlchemyError
+from datetime import datetime
+from ..models import promotions as promo_model
 
 
 def create(db: Session, request):
+    # --- Validate promotion if provided ---
+    promo = None
+    promo_id = getattr(request, "promo_id", None)
+
+    if promo_id is not None:
+        promo = (
+            db.query(promo_model.Promotion)
+            .filter(promo_model.Promotion.id == promo_id)
+            .first()
+        )
+        if not promo:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid promotion ID.",
+            )
+
+        now = datetime.utcnow()
+        if (not promo.is_active) or (
+            promo.expires_at is not None and promo.expires_at < now
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Promotion is expired or inactive.",
+            )
+
     new_item = model.Order(
         customer_name=request.customer_name,
-        description=request.description
+        description=request.description,
+        promo_id = promo_id
     )
 
     try:

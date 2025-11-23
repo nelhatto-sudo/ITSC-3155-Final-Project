@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from . import orders, order_details, recipes, sandwiches, resources, promotions, ratings
+from . import orders, order_details, recipes, sandwiches, resources, promotions, ratings, tags
 from .orders import Order, OrderStatus, OrderType, PaymentStatus
 from .order_details import OrderDetail
 from .sandwiches import Sandwich
@@ -8,8 +8,8 @@ from .resources import Resource
 from .recipes import Recipe
 from .promotions import Promotion
 from .ratings import Rating
+from .tags import Tag, SandwichTag
 from ..dependencies.database import engine, SessionLocal
-
 
 def index():
     """Drop all tables, recreate them, and seed test data."""
@@ -30,6 +30,7 @@ def index():
     orders.Base.metadata.create_all(engine)
     order_details.Base.metadata.create_all(engine)
     ratings.Base.metadata.create_all(engine)
+    tags.Base.metadata.create_all(engine)
 
     # 3) SEED DATA
     seed_initial_data()
@@ -166,5 +167,24 @@ def seed_initial_data():
         ]
         db.add_all(ratings_data)
         db.commit()
+
+        # ---------- TAGS (food properties / categories) ----------
+        # Only insert if table is empty
+        if not db.query(Tag).first():
+            initial_tags = [
+                Tag(name="spicy", display_name="Spicy"),
+                Tag(name="mild", display_name="Mild"),
+                Tag(name="vegetarian", display_name="Vegetarian"),
+                Tag(name="vegan", display_name="Vegan"),
+                Tag(name="kids", display_name="Kids"),
+                Tag(name="low_fat", display_name="Low Fat"),
+                Tag(name="high_protein", display_name="High Protein"),
+                Tag(name="gluten_free", display_name="Gluten Free"),
+                Tag(name="dairy_free", display_name="Dairy Free"),
+            ]
+            db.add_all(initial_tags)
+            db.commit()
+            for t in initial_tags:
+                db.refresh(t)
     finally:
         db.close()
