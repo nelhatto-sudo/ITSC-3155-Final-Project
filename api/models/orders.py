@@ -3,6 +3,11 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 from ..dependencies.database import Base
 import enum
+import uuid
+
+def generate_tracking_number() -> str:
+    # Example: TRK-3F9A1C2D
+    return f"TRK-{uuid.uuid4().hex[:8].upper()}"
 
 class OrderStatus(enum.Enum):
     placed = "placed"
@@ -27,7 +32,12 @@ class Order(Base):
     __table_args__ = (UniqueConstraint('tracking_number', name='uq_orders_tracking'),)
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    tracking_number = Column(String(32), nullable=False)
+    tracking_number = Column(
+        String(50),
+        nullable=False,
+        unique=True,
+        default=generate_tracking_number,  # auto-assign on insert
+    )
     customer_name = Column(String(100))
     customer_email = Column(String(120))
     order_type = Column(Enum(OrderType), nullable=False, default=OrderType.takeout)
@@ -44,3 +54,6 @@ class Order(Base):
     # relationships
     order_details = relationship("OrderDetail", back_populates="order")
     promotion = relationship("Promotion", back_populates="orders")
+
+
+
