@@ -111,7 +111,7 @@ def get_daily_revenue(db: Session, target_date: date):
     try:
         revenue = (
             db.query(func.coalesce(func.sum(order_model.Order.total), 0))
-            # .filter(order_model.Order.payment_status == order_model.PaymentStatus.paid)
+            .filter(order_model.Order.payment_status == order_model.PaymentStatus.paid)
             .filter(order_model.Order.order_date >= start_dt)
             .filter(order_model.Order.order_date < end_dt)
             .scalar()

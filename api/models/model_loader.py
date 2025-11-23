@@ -115,39 +115,102 @@ def seed_initial_data():
         db.refresh(promo2)
 
         # ---------- ORDERS ----------
+        now = datetime.utcnow()
+
         order1 = Order(
             customer_name="Alice Smith",
             customer_phone="555-123-4567",
             delivery_address="123 Main St",
             order_type=OrderType.takeout,
             status=OrderStatus.completed,
-            order_date=now - timedelta(days=1),
-            subtotal=15.50,
-            discount=1.55,
-            tax=1.10,
-            total=15.05,
+            order_date=now - timedelta(days=3),
+            subtotal=15.50,  # 1 Club + 1 Veggie
+            discount=1.55,  # 10% off (WELCOME10)
+            tax=1.40,
+            total=15.35,
             payment_status=PaymentStatus.paid,
             promo_id=promo1.id,
         )
+
         order2 = Order(
             customer_name="Bob Johnson",
             customer_phone="555-987-6543",
             delivery_address="45 Oak Ave, Apt 2B",
             order_type=OrderType.delivery,
-            status=OrderStatus.preparing,
-            order_date=now,
-            subtotal=12.00,
+            status=OrderStatus.out_for_delivery,
+            order_date=now - timedelta(days=2),
+            subtotal=10.00,  # 2 Kids Grilled Cheese
             discount=0.00,
-            tax=0.90,
-            total=12.90,
+            tax=0.80,
+            total=10.80,
+            payment_status=PaymentStatus.paid,
+            promo_id=None,
+        )
+
+        order3 = Order(
+            customer_name="Carla Nguyen",
+            customer_phone="555-555-1212",
+            delivery_address="789 Elm St",
+            order_type=OrderType.delivery,
+            status=OrderStatus.preparing,
+            order_date=now - timedelta(days=1),
+            subtotal=17.00,  # 1 Club + 1 Veggie
+            discount=5.00,  # $5 off (5OFF)
+            tax=1.20,
+            total=13.20,
+            payment_status=PaymentStatus.pending,
+            promo_id=promo2.id,
+        )
+
+        order4 = Order(
+            customer_name="David Lee",
+            customer_phone="555-222-3333",
+            delivery_address="22 Maple Dr",
+            order_type=OrderType.takeout,
+            status=OrderStatus.ready,
+            order_date=now - timedelta(hours=6),
+            subtotal=8.50,  # 1 Club
+            discount=0.00,
+            tax=0.70,
+            total=9.20,
             payment_status=PaymentStatus.pending,
             promo_id=None,
         )
 
-        db.add_all([order1, order2])
+        order5 = Order(
+            customer_name="Emily Carter",
+            customer_phone="555-444-8888",
+            delivery_address="901 Pine St",
+            order_type=OrderType.delivery,
+            status=OrderStatus.canceled,
+            order_date=now - timedelta(hours=12),
+            subtotal=14.00,  # 2 Veggie
+            discount=0.00,
+            tax=0.00,  # canceled, ignore tax/total in analytics if you want
+            total=0.00,
+            payment_status=PaymentStatus.failed,
+            promo_id=None,
+        )
+
+        order6 = Order(
+            customer_name="Frank Miller",
+            customer_phone="555-777-9999",
+            delivery_address="310 Oak Blvd",
+            order_type=OrderType.delivery,
+            status=OrderStatus.completed,
+            order_date=now,
+            subtotal=20.50,  # 1 Club + 1 Veggie + 1 Kids
+            discount=2.05,  # 10% off (WELCOME10)
+            tax=1.85,
+            total=20.30,
+            payment_status=PaymentStatus.paid,
+            promo_id=promo1.id,
+        )
+
+        db.add_all([order1, order2, order3, order4, order5, order6])
         db.commit()
-        db.refresh(order1)
-        db.refresh(order2)
+        for o in (order1, order2, order3, order4, order5, order6):
+            db.refresh(o)
 
         # ---------- ORDER DETAILS ----------
         order_details_data = [
@@ -157,16 +220,47 @@ def seed_initial_data():
 
             # Order 2: 2 Kids Grilled Cheese
             OrderDetail(order_id=order2.id, sandwich_id=kids_grilled_cheese.id, amount=2),
+
+            # Order 3: 1 Club, 1 Veggie
+            OrderDetail(order_id=order3.id, sandwich_id=club.id, amount=1),
+            OrderDetail(order_id=order3.id, sandwich_id=veggie.id, amount=1),
+
+            # Order 4: 1 Club
+            OrderDetail(order_id=order4.id, sandwich_id=club.id, amount=1),
+
+            # Order 5: 2 Veggie (canceled order)
+            OrderDetail(order_id=order5.id, sandwich_id=veggie.id, amount=2),
+
+            # Order 6: 1 Club, 1 Veggie, 1 Kids
+            OrderDetail(order_id=order6.id, sandwich_id=club.id, amount=1),
+            OrderDetail(order_id=order6.id, sandwich_id=veggie.id, amount=1),
+            OrderDetail(order_id=order6.id, sandwich_id=kids_grilled_cheese.id, amount=1),
         ]
         db.add_all(order_details_data)
         db.commit()
 
         # ---------- RATINGS ----------
         ratings_data = [
-            Rating(sandwich_id=club.id, stars=5, reason="Delicious and fresh."),
-            Rating(sandwich_id=veggie.id, stars=3, reason="Good but could use more seasoning."),
-            Rating(sandwich_id=kids_grilled_cheese.id, stars=4, reason="Kids loved it!"),
+            # Club Sandwich – mostly positive, one complaint
+            Rating(sandwich_id=club.id, stars=5, reason="Perfect balance of flavors and very fresh ingredients."),
+            Rating(sandwich_id=club.id, stars=4, reason="Tasty and filling, bread was slightly toasted more than I like."),
+            Rating(sandwich_id=club.id, stars=5, reason="My go-to lunch, generous portion size."),
+            Rating(sandwich_id=club.id, stars=2, reason="Bread was soggy and the chicken was a bit dry this time."),
+
+            # Veggie Delight – mixed reviews, some specific complaints
+            Rating(sandwich_id=veggie.id, stars=4, reason="Very fresh veggies, light but satisfying."),
+            Rating(sandwich_id=veggie.id, stars=3, reason="Good overall, but could use more seasoning and sauce."),
+            Rating(sandwich_id=veggie.id, stars=5, reason="Great vegetarian option, loved the crunch and flavor."),
+            Rating(sandwich_id=veggie.id, stars=2, reason="Too bland for my taste and the lettuce was wilted."),
+            Rating(sandwich_id=veggie.id, stars=1, reason="Almost no dressing, very dry and not enjoyable."),
+
+            # Kids Grilled Cheese – generally positive, one mild issue
+            Rating(sandwich_id=kids_grilled_cheese.id, stars=5, reason="Kids loved it, cheese was perfectly melted."),
+            Rating(sandwich_id=kids_grilled_cheese.id, stars=4, reason="Great for children, could be cut into smaller pieces."),
+            Rating(sandwich_id=kids_grilled_cheese.id, stars=3, reason="Good, but the crust was a little too crunchy for the kids."),
         ]
+        db.add_all(ratings_data)
+        db.commit()
         db.add_all(ratings_data)
         db.commit()
 
