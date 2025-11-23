@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, Response
 from sqlalchemy.exc import SQLAlchemyError
+from ..controllers.orders import recalculate_order_totals
 
 from ..models import order_details as model
 from ..models import recipes as recipe_model
@@ -93,6 +94,8 @@ def create(db: Session, request):
         db.add(new_item)
         db.commit()
         db.refresh(new_item)
+        recalculate_order_totals(db, request.order_id)
+
         return new_item
 
     except SQLAlchemyError as e:
@@ -129,7 +132,9 @@ def update(db: Session, request, item_id: int):
     try:
         q.update(request.dict(exclude_unset=True), synchronize_session=False)
         db.commit()
-        return q.first()
+        updated = q.first()
+        recalculate_order_totals(db, updated.order_id)
+        return updated
     except SQLAlchemyError as e:
         db.rollback()
         error = str(e.__dict__.get("orig", e))
@@ -146,8 +151,10 @@ def delete(db: Session, item_id: int):
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Id not found!",
             )
+        order_id = q.first().order_id
         q.delete(synchronize_session=False)
         db.commit()
+        recalculate_order_totals(db, order_id)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except SQLAlchemyError as e:
         db.rollback()

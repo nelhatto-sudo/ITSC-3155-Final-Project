@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends
+from datetime import date
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from ..dependencies.database import get_db
@@ -26,3 +27,15 @@ def complaints(max_stars: int = 2, db: Session = Depends(get_db)):
     Example: /staff/complaints?max_stars=2
     """
     return controller.get_complaints(db, max_stars)
+
+
+@router.get("/revenue")
+def daily_revenue(
+    date_: date = Query(..., alias="date", description="Date in YYYY-MM-DD format"),
+    db: Session = Depends(get_db),
+):
+    """
+    Determine total revenue generated from food sales on a given day.
+    Example: /staff/revenue?date=2025-11-24
+    """
+    return controller.get_daily_revenue(db, date_)

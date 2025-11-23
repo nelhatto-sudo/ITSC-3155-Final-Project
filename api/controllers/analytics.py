@@ -1,3 +1,6 @@
+from datetime import datetime, date, time, timedelta
+from decimal import Decimal
+
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from fastapi import HTTPException, status
@@ -5,6 +8,7 @@ from fastapi import HTTPException, status
 from ..models import order_details as od_model
 from ..models import sandwiches as sand_model
 from ..models import ratings as rating_model
+from ..models import orders as order_model
 
 
 def get_least_popular_dishes(db: Session, limit: int = 5):
@@ -90,3 +94,38 @@ def get_complaints(db: Session, max_stars: int = 2):
         }
         for row in rows
     ]
+
+
+def get_daily_revenue(db: Session, target_date: date):
+    """
+    Compute total revenue (sum of order.total) for a given calendar date.
+    Only counts orders with payment_status = 'paid'.
+    """
+
+    # Start of the day: YYYY-MM-DD 00:00:00
+    start_dt = datetime.combine(target_date, time.min)
+    # Start of next day: for half-open [start, next_start) interval
+    next_day = target_date + timedelta(days=1)
+    end_dt = datetime.combine(next_day, time.min)
+
+    try:
+        revenue = (
+            db.query(func.coalesce(func.sum(order_model.Order.total), 0))
+            # .filter(order_model.Order.payment_status == order_model.PaymentStatus.paid)
+            .filter(order_model.Order.order_date >= start_dt)
+            .filter(order_model.Order.order_date < end_dt)
+            .scalar()
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+    if revenue is None:
+        revenue = Decimal("0.00")
+
+    return {
+        "date": target_date.isoformat(),
+        "total_revenue": float(revenue),
+    }
