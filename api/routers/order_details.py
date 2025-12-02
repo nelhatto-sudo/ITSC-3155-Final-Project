@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, FastAPI, status, Response
+from fastapi import APIRouter, Query, Depends, FastAPI, status, Response
 from sqlalchemy.orm import Session
 from ..controllers import order_details as controller
 from ..schemas import order_details as schema
@@ -16,8 +16,14 @@ def create(request: schema.OrderDetailCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=list[schema.OrderDetail])
-def read_all(db: Session = Depends(get_db)):
-    return controller.read_all(db)
+def read_all(
+    order_id: int | None = Query(
+        default=None,
+        description="Optional order id to filter order details",
+    ),
+    db: Session = Depends(get_db),
+):
+    return controller.read(db=db, order_id=order_id)
 
 
 @router.get("/{item_id}", response_model=schema.OrderDetail)

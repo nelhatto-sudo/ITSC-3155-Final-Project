@@ -171,12 +171,20 @@ def update(db: Session, item_id, request):
 
 def delete(db: Session, item_id):
     try:
-        item = db.query(order_model.Order).filter(order_model.Order.id == item_id)
-        if not item.first():
+        order = (
+            db.query(order_model.Order)
+            .filter(order_model.Order.id == item_id)
+            .first())
+        if not order:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Id not found!")
-        item.delete(synchronize_session=False)
+
+        db.delete(order)
         db.commit()
     except SQLAlchemyError as e:
-        error = str(e.__dict__['orig'])
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)

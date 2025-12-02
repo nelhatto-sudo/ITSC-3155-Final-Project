@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status, Response
 from sqlalchemy.exc import SQLAlchemyError
 from ..controllers.orders import recalculate_order_totals
+from typing import Optional
 
 from ..models import order_details as model
 from ..models import recipes as recipe_model
@@ -106,8 +107,13 @@ def create(db: Session, request):
             detail=error,
         )
 
-def read_all(db: Session):
-    return db.query(model.OrderDetail).all()
+def read(db: Session, order_id: int | None = None):
+    q = db.query(model.OrderDetail)
+
+    if order_id is not None:
+        q = q.filter(model.OrderDetail.order_id == order_id)
+
+    return q.all()
 
 def read_one(db: Session, item_id: int):
     item = (

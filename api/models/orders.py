@@ -53,7 +53,7 @@ class Order(Base):
     promo_id = Column(Integer, ForeignKey("promotions.id"), nullable=True)
 
     # relationships
-    order_details = relationship("OrderDetail", back_populates="order")
+    order_details = relationship("OrderDetail", back_populates="order", cascade="all, delete-orphan")
     promotion = relationship("Promotion", back_populates="orders")
 
 
